@@ -11,6 +11,8 @@
            05 WS-ANO PIC 9(4) VALUE ZEROS.
 
        77 WS-EVALIDA PIC 9(1) VALUE 1.
+           88 WS-DATA-VALIDA VALUE 1.
+           88 WS-DATA-INVALIDA VALUE 0.
       
        PROCEDURE DIVISION.
            
@@ -34,29 +36,29 @@
 
        VALIDAR-DATA.
            IF WS-ANO < 2000 THEN
-               MOVE 0 TO WS-EVALIDA
+               SET WS-DATA-INVALIDA TO TRUE
            ELSE 
                IF WS-MES <= 0 OR WS-MES > 12 THEN
-                   MOVE 0 TO WS-EVALIDA
+                   SET WS-DATA-INVALIDA TO TRUE
                ELSE
                    IF WS-DIA <= 0 OR WS-DIA > 31 THEN 
-                     MOVE 0 TO WS-EVALIDA
+                     SET WS-DATA-INVALIDA TO TRUE
                    ELSE
                      IF WS-MES = 2 THEN
                        IF WS-ANO = 2016 THEN
                           IF WS-DIA > 29 THEN 
-                             MOVE 0 TO WS-EVALIDA 
+                             SET WS-DATA-INVALIDA TO TRUE 
                           END-IF
                        ELSE 
                          IF WS-DIA > 28 THEN 
-                           MOVE 0 TO WS-EVALIDA 
+                           SET WS-DATA-INVALIDA TO TRUE 
                          END-IF
                        END-IF  
                      ELSE
                          IF WS-MES = 4 OR WS-MES = 6 OR WS-MES = 9 
                             OR WS-MES = 11 THEN
                                IF WS-DIA > 30 THEN
-                                 MOVE 0 TO WS-EVALIDA 
+                                 SET WS-DATA-INVALIDA TO TRUE 
                                END-IF
                          END-IF
                      END-IF
