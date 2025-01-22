@@ -25,12 +25,8 @@
            DISPLAY "________________________________________".
            DISPLAY "PROGRAMA VALIDADOR DE DATA".
            DISPLAY "________________________________________".
-           DISPLAY "DIGITE O DIA: ".
-           ACCEPT WS-DIA.
-           DISPLAY "DIGITE O MES: ".
-           ACCEPT WS-MES.
-           DISPLAY "DIGITE O ANO: ".
-           ACCEPT WS-ANO.
+           DISPLAY "DIGITE A DATA NESTE FORMATO DIA/MES/ANO: ".
+           ACCEPT WS-DATA
            DISPLAY "________________________________________".
            DISPLAY " ".
 
