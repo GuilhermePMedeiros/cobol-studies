@@ -1,5 +1,5 @@
        IDENTIFICATION DIVISION.
-       PROGRAM-ID. 'VALIDATORDATA'.
+       PROGRAM-ID. 'VALIDADORDATA'.
        ENVIRONMENT DIVISION.
        DATA DIVISION.
        WORKING-STORAGE SECTION.    
@@ -10,7 +10,7 @@
            05 FILLER PIC X(1) VALUE '/'.
            05 WS-ANO PIC 9(4) VALUE ZEROS.
 
-       77 WS-ISVALID PIC 9(1) VALUE 1.
+       77 WS-EVALIDA PIC 9(1) VALUE 1.
       
        PROCEDURE DIVISION.
            
@@ -34,29 +34,29 @@
 
        VALIDAR-DATA.
            IF WS-ANO < 2000 THEN
-               MOVE 0 TO WS-ISVALID
+               MOVE 0 TO WS-EVALIDA
            ELSE 
                IF WS-MES <= 0 OR WS-MES > 12 THEN
-                   MOVE 0 TO WS-ISVALID
+                   MOVE 0 TO WS-EVALIDA
                ELSE
                    IF WS-DIA <= 0 OR WS-DIA > 31 THEN 
-                     MOVE 0 TO WS-ISVALID
+                     MOVE 0 TO WS-EVALIDA
                    ELSE
                      IF WS-MES = 2 THEN
                        IF WS-ANO = 2016 THEN
                           IF WS-DIA > 29 THEN 
-                             MOVE 0 TO WS-ISVALID 
+                             MOVE 0 TO WS-EVALIDA 
                           END-IF
                        ELSE 
                          IF WS-DIA > 28 THEN 
-                           MOVE 0 TO WS-ISVALID 
+                           MOVE 0 TO WS-EVALIDA 
                          END-IF
                        END-IF  
                      ELSE
                          IF WS-MES = 4 OR WS-MES = 6 OR WS-MES = 9 
                             OR WS-MES = 11 THEN
                                IF WS-DIA > 30 THEN
-                                 MOVE 0 TO WS-ISVALID 
+                                 MOVE 0 TO WS-EVALIDA 
                                END-IF
                          END-IF
                      END-IF
@@ -65,7 +65,7 @@
            END-IF.
 
        MOSTRAR-RESULTADO.
-           IF WS-ISVALID EQUAL ZEROS THEN
+           IF WS-EVALIDA EQUAL ZEROS THEN
                DISPLAY "DATA INFORMADA " WS-DATA " E INVALIDA."
            ELSE
                DISPLAY "DATA INFORMADA " WS-DATA " E VALIDA." 
