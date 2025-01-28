@@ -22,7 +22,7 @@
       *
            SELECT CADCLIN  ASSIGN    TO CADCLIN
                       FILE STATUS    IS WRK-FS-CADCLIN.
-      *
+      * adicionando o file status do CADEXCL                                    
            SELECT CADEXCL  ASSIGN    TO CADEXCL
                       FILE STATUS    IS WRK-FS-CADEXCL.
       *--------------------------------------------------------------*
@@ -59,6 +59,7 @@
        01  FD-CADCLIN-REGISTRO    PIC X(089).
       *
 
+      *adicionando arquivo e o registro do CADEXCL
       *--------------------------------------------------------------*
       *    ARQUIVO CADEXCL
       *--------------------------------------------------------------*
@@ -155,7 +156,7 @@
            GOBACK.
       *
        010-INICIALIZAR.
-           DISPLAY "PROGRAMA AC00EX06 INICIADO"
+           DISPLAY "PROGRAMA AC00EX07 INICIADO"
            PERFORM 011-INICIALIZAR-VARIAVEIS.
            PERFORM 060-FORMATA-DATA.
            PERFORM 061-FORMATA-HORA.
@@ -198,7 +199,7 @@
               PERFORM 999-ROTINA-ABEND
            END-IF.
        
-
+      *Adicionando a abertura do arquivo 
            OPEN OUTPUT  CADEXCL.
            IF WRK-FS-CADEXCL NOT = ZEROS
               DISPLAY "ERRO ABERTURA CADEXCL - FS: " WRK-FS-CADEXCL
@@ -319,9 +320,15 @@
               PERFORM 999-ROTINA-ABEND
            END-IF.
 
-           CLOSE CADCLIN
+           CLOSE CADCLIN.
            IF WRK-FS-CADCLIN NOT = "00"
               DISPLAY "ERRO CLOSE CADCLIN - FS: " WRK-FS-CADCLIN
+              PERFORM 999-ROTINA-ABEND
+           END-IF.
+      *adicionando o fechamento do arquivo CADEXCL.
+           CLOSE CADEXCL.
+           IF WRK-FS-CADEXCL NOT = "00"
+              DISPLAY "ERRO CLOSE CADEXCL - FS: " WRK-FS-CADEXCL
               PERFORM 999-ROTINA-ABEND
            END-IF.
           
@@ -344,6 +351,6 @@
      
       *
        999-ROTINA-ABEND.
-           DISPLAY "ABEND DO PROGRAMA - AC00EX06".
+           DISPLAY "ABEND DO PROGRAMA - AC00EX07".
            GOBACK.
            
