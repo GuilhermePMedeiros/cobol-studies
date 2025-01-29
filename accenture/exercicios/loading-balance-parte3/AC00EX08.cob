@@ -54,7 +54,7 @@
            LABEL RECORD IS STANDARD
            BLOCK CONTAINS 0 RECORDS.
       
-       01  FD-RELCLI-REGISTRO     PIC X(059).
+       01  FD-RELCLI-REGISTRO     PIC X(062).
     
        WORKING-STORAGE       SECTION.
 
