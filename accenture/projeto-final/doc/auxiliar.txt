@@ -1,0 +1,11 @@
+      *     CLIENTE
+      *     COMPRA
+      *     COMPROD
+      *     PRODUTO
+      *     BOLCHE
+      *     DEBCRE
+      *     RELTOT 
+
+      computer= 9 * 0,8
+
+      é 0,8 e não 0.8
