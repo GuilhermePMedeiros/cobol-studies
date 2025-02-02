@@ -1,7 +1,16 @@
        IDENTIFICATION        DIVISION.
-       PROGRAM-ID.           AC00EX08.
+       PROGRAM-ID.           AC00EX10.
        AUTHOR.               GUILHERME PACHECO.
-
+      *-------------------------------------------------------
+      *PROGRAMA AC00EX10
+      *APLICAÇÃO FEITA PARA A LOJA VENDAS SA.
+      *UM PROGRAMA QUE CALCULE O VALOR LIQUIDO DO PRODUTO DE ACORDO
+      *COM A QUANTIDADE DE PRODUTOS E O TIPO-PAGAMENTO QUE O CLIENTE
+      *ESCOLHEU NO MOMENTO DA COMPRA.
+      *ALÉM DESSE RELATORIO GERADO PELO SISTEMA, ELE TAMBÉM CRIA DOIS 
+      *ARQUIVOS SEPARANDO AS COMPRAS PAGAS COM BOLETO E CHEQUE
+      *DAS QUE FORAM PAGAS COM DEBITO E CREDITO.
+      *-------------------------------------------------------]
        ENVIRONMENT           DIVISION.
       
        CONFIGURATION         SECTION.
@@ -188,17 +197,17 @@
        01  WRK-CONTADORES-PERFORMACE.
            03 WRK-CONT-PER      PIC 9(02) VALUE ZEROS.
                
-
-      *TABELAS INTERNAS
-       01  TAB-COMPROD-REGISTRO OCCURS 8 TIMES.                            
-           05 TAB-COMPROD-COD-COMPRA	PIC  9(005).
-           05 TAB-COMPROD-COD-PRODUTO	PIC  9(005).    
-           05 TAB-COMPROD-QUANTIDADE	PIC  9(003). 
-      
+      *TABELA INTERNA
        01  TAB-PRODUTO-REGISTRO OCCURS 5 TIMES.                            
            05 TAB-PRODUTO-COD-PRODUTO	PIC  9(005).
            05 TAB-PRODUTO-NOME		    PIC  X(010).    
-           05 TAB-PRODUTO-VALOR		    PIC  9(009)V99. 
+           05 TAB-PRODUTO-VALOR		    PIC  9(009)V99.
+
+       01  WRK-AUXILIARES.
+           03 AUX-RESULT-VALOR-BRUTO    PIC  9(009)V99.
+           03 AUX-RESULT-VALOR-LIQUIDO  PIC  9(009)V99. 
+           03 AUX-TOTAL-VALOR-BRUTO     PIC  9(009)V99.
+           03 AUX-TOTAL-VALOR-LIQUIDO   PIC  9(009)V99.
 
        PROCEDURE             DIVISION.
        
@@ -219,13 +228,14 @@
            PERFORM 012-ABRIR-ARQUIVOS.
            PERFORM 040-LER-ARQUIVOS.
            
-           PERFORM 013-CARREGAR-TABELAS.
+           PERFORM 015-CARREGAR-TABELA-PRODUTO.
 
        011-INICIALIZAR-VARIAVEIS.
            INITIALIZE WRK-CONTADORES.
            INITIALIZE WRK-CONTADORES-PERFORMACE.
            ACCEPT  WRK-DATA-SIS FROM DATE YYYYMMDD.
            ACCEPT  WRK-HORA-SIS FROM TIME.
+           INITIALIZE WRK-AUXILIARES.
       
        012-ABRIR-ARQUIVOS.
            OPEN INPUT    CLIENTE.
@@ -269,44 +279,23 @@
               DISPLAY "ERRO ABERTURA RELTOT - FS: " WRK-FS-RELTOT
               PERFORM 999-ROTINA-ABEND
            END-IF. 
-       
-       013-CARREGAR-TABELAS.
-           PERFORM 014-CARRREGAR-TABELA-COMPROD.
-           PERFORM 015-CARREGAR-TABELA-PRODUTO.
-
-       014-CARRREGAR-TABELA-COMPROD.
-           PERFORM 031-MOVER-DADOS-TAB-COMPROD 
-           VARYING WRK-CONT-PER
-           FROM 0 BY 1
-           UNTIL WRK-FS-COMPROD = 10.
             
        015-CARREGAR-TABELA-PRODUTO.
-           PERFORM 032-MOVER-DADOS-TAB-PRODUTO 
+           PERFORM 031-MOVER-DADOS-TAB-PRODUTO 
            VARYING WRK-CONT-PER
-           FROM 0 BY 1
+           FROM 1 BY 1
            UNTIL WRK-FS-PRODUTO = 10.
            
        020-PROCESSAR.
-               IF COMPRA-COD-CLIENTE = CLIENTE-COD-CLINTE THEN
+               IF COMPRA-COD-CLIENTE = CLIENTE-COD-CLINTE THEN     
+                   PERFORM 070-VALIDAR-COMPROD 
+                   UNTIL COMPRA-COD-COMPRA < COMPROD-COD-COMPRA 
+                   OR WRK-FS-COMPROD = 10
                    
-                   DISPLAY CLIENTE-COD-CLINTE " + " COMPRA-COD-COMPRA
-      * todo: Validar se esta no COMPROD
-                   EVALUATE COMPRA-TIPO-PAGTO
-                       WHEN "BOLETO"
-      *                0,20  20%
-                       DISPLAY 'BO'
-                       WHEN "DEBITO"
-      *                0,15  15%
-                       DISPLAY 'DE'
-                       WHEN "CREDITO"
-      *                0,10  10%
-                       DISPLAY 'CRE'
-                       WHEN "CHEQUE"
-                       DISPLAY "CHE"
-      *                NENHUM DESCONTO                  
-                   END-EVALUATE
+                   PERFORM  071-SALVAR-RELTOT
 
                    PERFORM 042-LER-COMPRA
+                   INITIALIZE WRK-AUXILIARES
                ELSE 
                    IF COMPRA-COD-CLIENTE < CLIENTE-COD-CLINTE THEN
                        PERFORM 042-LER-COMPRA
@@ -314,19 +303,74 @@
                        PERFORM 041-LER-CLIENTE
                    END-IF
                END-IF.
-      
-       031-MOVER-DADOS-TAB-COMPROD.
-           MOVE WRK-COMPROD-REGISTRO 
-           TO TAB-COMPROD-REGISTRO(WRK-CONT-PER).
-           
-           PERFORM 043-LER-COMPROD.
 
-       032-MOVER-DADOS-TAB-PRODUTO. 
+       031-MOVER-DADOS-TAB-PRODUTO. 
            MOVE WRK-PRODUTO-REGISTRO
            TO TAB-PRODUTO-REGISTRO(WRK-CONT-PER).
 
            PERFORM 044-LER-PRODUTO.
        
+       032-MOVER-DADOS-PRODUTO-ATUAL.
+           MOVE TAB-PRODUTO-REGISTRO(WRK-CONT-PER) 
+           TO WRK-PRODUTO-REGISTRO.
+
+       033-MOVER-DADOS-BOLCHE.
+           MOVE COMPRA-COD-COMPRA    TO BOLCHE-COD-COMPRA.
+           MOVE PRODUTO-NOME         TO BOLCHE-NOME-PRODUTO.
+           MOVE COMPRA-TIPO-PAGTO    TO BOLCHE-TIPO-PAGTO.
+           MOVE COMPROD-QUANTIDADE   TO BOLCHE-QUANTIDADE.
+
+           COMPUTE AUX-RESULT-VALOR-BRUTO 
+           EQUAL PRODUTO-VALOR * COMPROD-QUANTIDADE. 
+
+           MOVE AUX-RESULT-VALOR-BRUTO TO BOLCHE-VALOR.
+                   
+           IF COMPRA-TIPO-PAGTO = "BOLETO" THEN
+               COMPUTE AUX-RESULT-VALOR-LIQUIDO 
+               EQUAL 
+               AUX-RESULT-VALOR-BRUTO - (AUX-RESULT-VALOR-BRUTO * 0,20)
+           ELSE
+               MOVE AUX-RESULT-VALOR-BRUTO 
+               TO AUX-RESULT-VALOR-LIQUIDO
+           END-IF.
+
+           MOVE AUX-RESULT-VALOR-LIQUIDO TO BOLCHE-VALOR-LIQUIDO.
+
+           ADD AUX-RESULT-VALOR-BRUTO TO AUX-TOTAL-VALOR-BRUTO.
+           ADD AUX-RESULT-VALOR-LIQUIDO TO AUX-TOTAL-VALOR-LIQUIDO.
+           
+       034-MOVER-DADOS-DEBCRE.
+           MOVE COMPRA-COD-COMPRA    TO DEBCRE-COD-COMPRA.
+           MOVE PRODUTO-NOME         TO DEBCRE-NOME-PRODUTO.
+           MOVE COMPRA-TIPO-PAGTO    TO DEBCRE-TIPO-PAGTO.
+           MOVE COMPROD-QUANTIDADE   TO DEBCRE-QUANTIDADE.
+
+           COMPUTE AUX-RESULT-VALOR-BRUTO 
+           EQUAL PRODUTO-VALOR * COMPROD-QUANTIDADE. 
+
+           MOVE AUX-RESULT-VALOR-BRUTO TO DEBCRE-VALOR.
+                   
+           IF COMPRA-TIPO-PAGTO = "DEBITO" THEN
+               COMPUTE AUX-RESULT-VALOR-LIQUIDO 
+               EQUAL 
+               AUX-RESULT-VALOR-BRUTO - (AUX-RESULT-VALOR-BRUTO * 0,15)
+           ELSE
+               COMPUTE AUX-RESULT-VALOR-LIQUIDO 
+               EQUAL
+               AUX-RESULT-VALOR-BRUTO - (AUX-RESULT-VALOR-BRUTO * 0,10)
+           END-IF.
+
+           MOVE AUX-RESULT-VALOR-LIQUIDO TO DEBCRE-VALOR-LIQUIDO.
+
+           ADD AUX-RESULT-VALOR-BRUTO TO AUX-TOTAL-VALOR-BRUTO.
+           ADD AUX-RESULT-VALOR-LIQUIDO TO AUX-TOTAL-VALOR-LIQUIDO.
+           
+       035-MOVER-DADOS-RELTOT.    
+           MOVE COMPRA-COD-COMPRA TO RELTOT-COD-COMPRA.	  
+           MOVE CLIENTE-NOME TO RELTOT-NOME-CLIENTE.	 
+           MOVE AUX-TOTAL-VALOR-BRUTO TO RELTOT-TOT-VALOR-BTO.	
+           MOVE AUX-TOTAL-VALOR-LIQUIDO TO RELTOT-TOT-VALOR-LIQ.
+
        040-LER-ARQUIVOS.
            PERFORM 041-LER-CLIENTE.
            IF WRK-FS-CLIENTE = "10"
@@ -485,6 +529,38 @@
               PERFORM 999-ROTINA-ABEND
            END-IF.
            
+       
+       070-VALIDAR-COMPROD.
+           IF COMPRA-COD-COMPRA = COMPROD-COD-COMPRA THEN
+                   
+                   PERFORM 080-BUSCAR-PRODUTO VARYING WRK-CONT-PER
+                   FROM 1 BY 1
+                   UNTIL WRK-CONT-PER > 5
+
+                   IF COMPROD-COD-PRODUTO NOT = 99999 THEN 
+                       IF COMPRA-TIPO-PAGTO = "BOLETO" OR "CHEQUE"         
+                              PERFORM 033-MOVER-DADOS-BOLCHE
+                              PERFORM 045-GRAVAR-BOLCHE    
+                       ELSE   
+                              PERFORM 034-MOVER-DADOS-DEBCRE
+                              PERFORM 046-GRAVAR-DEBCRE
+                       END-IF   
+                   END-IF     
+           END-IF.
+           PERFORM 043-LER-COMPROD.
+
+       071-SALVAR-RELTOT.
+           PERFORM 035-MOVER-DADOS-RELTOT.
+           PERFORM 047-GRAVAR-RELTOT.
+
+       080-BUSCAR-PRODUTO.
+           IF 
+           TAB-PRODUTO-COD-PRODUTO(WRK-CONT-PER) = COMPROD-COD-PRODUTO 
+           THEN
+               PERFORM 032-MOVER-DADOS-PRODUTO-ATUAL
+           ELSE 
+              MOVE 99999 TO PRODUTO-COD-PRODUTO
+           END-IF.     
 
        060-FORMATA-DATA.
            MOVE WRK-ANO-SIS TO WRK-VAL-ANO-SIS.
@@ -501,6 +577,6 @@
       -              "" WRK-FORMATAR-HORA-SIS.
      
        999-ROTINA-ABEND.
-           DISPLAY "ABEND DO PROGRAMA - AC00EX010".
+           DISPLAY "ABEND DO PROGRAMA - AC00EX10".
            GOBACK.
             
