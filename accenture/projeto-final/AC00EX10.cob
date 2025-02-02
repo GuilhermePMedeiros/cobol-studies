@@ -214,7 +214,8 @@
        000-AC00EX10-APP.
            PERFORM 010-INICIALIZAR.
            PERFORM 020-PROCESSAR 
-             UNTIL WRK-FS-CLIENTE = 10 AND WRK-FS-COMPRA = 10.
+             UNTIL WRK-FS-CLIENTE = "10" 
+             AND WRK-FS-COMPRA = "10".
            PERFORM 050-FINALIZAR.
            GOBACK.
 
@@ -284,18 +285,25 @@
            PERFORM 031-MOVER-DADOS-TAB-PRODUTO 
            VARYING WRK-CONT-PER
            FROM 1 BY 1
-           UNTIL WRK-FS-PRODUTO = 10.
+           UNTIL WRK-FS-PRODUTO = "10".
            
        020-PROCESSAR.
-               IF COMPRA-COD-CLIENTE = CLIENTE-COD-CLINTE THEN     
-                   PERFORM 070-VALIDAR-COMPROD 
-                   UNTIL COMPRA-COD-COMPRA < COMPROD-COD-COMPRA 
-                   OR WRK-FS-COMPROD = 10
-                   
-                   PERFORM  071-SALVAR-RELTOT
-
-                   PERFORM 042-LER-COMPRA
-                   INITIALIZE WRK-AUXILIARES
+               IF COMPRA-COD-CLIENTE = CLIENTE-COD-CLINTE THEN
+                   IF COMPRA-COD-COMPRA = COMPROD-COD-COMPRA THEN
+                       PERFORM 071-PROCESSAR-COMPROD 
+                       UNTIL COMPRA-COD-COMPRA < COMPROD-COD-COMPRA 
+                       
+                       PERFORM  071-SALVAR-RELTOT
+                       INITIALIZE WRK-AUXILIARES
+                       
+                       PERFORM 042-LER-COMPRA
+                   ELSE
+                       IF COMPRA-COD-COMPRA < COMPROD-COD-COMPRA
+                          PERFORM 042-LER-COMPRA
+                       ELSE
+                           PERFORM 043-LER-COMPROD
+                       END-IF
+                   END-IF
                ELSE 
                    IF COMPRA-COD-CLIENTE < CLIENTE-COD-CLINTE THEN
                        PERFORM 042-LER-COMPRA
@@ -375,21 +383,25 @@
            PERFORM 041-LER-CLIENTE.
            IF WRK-FS-CLIENTE = "10"
               DISPLAY "ARQUIVO CLIENTE VAZIO"
+              PERFORM 999-ROTINA-ABEND
            END-IF.
 
            PERFORM 042-LER-COMPRA.
            IF WRK-FS-COMPRA = "10"
               DISPLAY "ARQUIVO COMPRA VAZIO"
+              PERFORM 999-ROTINA-ABEND
            END-IF.
 
            PERFORM 043-LER-COMPROD.
            IF WRK-FS-COMPROD = "10"
               DISPLAY "ARQUIVO COMPROD VAZIO"
+              PERFORM 999-ROTINA-ABEND
            END-IF.
 
            PERFORM 044-LER-PRODUTO.
            IF WRK-FS-PRODUTO = "10"
               DISPLAY "ARQUIVO PRODUTO VAZIO"
+              PERFORM 999-ROTINA-ABEND
            END-IF.
 
        041-LER-CLIENTE.
@@ -415,7 +427,7 @@
                 ADD 1 TO WRK-CONT-LIDOS-COMPRA
            END-IF.
            IF WRK-FS-COMPRA = "10"
-              MOVE 99999 TO COMPRA-COD-COMPRA
+              MOVE 99998 TO COMPRA-COD-COMPRA
               MOVE 999 TO COMPRA-COD-CLIENTE
            END-IF.
 
@@ -427,7 +439,10 @@
            END-IF.
            IF WRK-FS-COMPROD = "00"
                 ADD 1 TO WRK-CONT-LIDOS-COMPROD
-           END-IF.  
+           END-IF.
+           IF WRK-FS-COMPROD = "10"
+              MOVE 99999 TO COMPROD-COD-COMPRA
+           END-IF. 
 
        044-LER-PRODUTO.
            READ PRODUTO    INTO WRK-PRODUTO-REGISTRO.
@@ -528,27 +543,25 @@
               DISPLAY "ERRO CLOSE RELTOT - FS: " WRK-FS-RELTOT
               PERFORM 999-ROTINA-ABEND
            END-IF.
-           
        
-       070-VALIDAR-COMPROD.
-           IF COMPRA-COD-COMPRA = COMPROD-COD-COMPRA THEN
+       071-PROCESSAR-COMPROD.
                    
-                   PERFORM 080-BUSCAR-PRODUTO VARYING WRK-CONT-PER
-                   FROM 1 BY 1
-                   UNTIL WRK-CONT-PER > 5
+           PERFORM 080-BUSCAR-PRODUTO VARYING WRK-CONT-PER
+           FROM 1 BY 1
+           UNTIL WRK-CONT-PER > 5
 
-                   IF COMPROD-COD-PRODUTO NOT = 99999 THEN 
-                       IF COMPRA-TIPO-PAGTO = "BOLETO" OR "CHEQUE"         
-                              PERFORM 033-MOVER-DADOS-BOLCHE
-                              PERFORM 045-GRAVAR-BOLCHE    
-                       ELSE   
-                              PERFORM 034-MOVER-DADOS-DEBCRE
-                              PERFORM 046-GRAVAR-DEBCRE
-                       END-IF   
-                   END-IF     
-           END-IF.
+           IF COMPROD-COD-PRODUTO NOT = 99999 THEN 
+               IF COMPRA-TIPO-PAGTO = "BOLETO" OR "CHEQUE"         
+                      PERFORM 033-MOVER-DADOS-BOLCHE
+                      PERFORM 045-GRAVAR-BOLCHE    
+               ELSE   
+                      PERFORM 034-MOVER-DADOS-DEBCRE
+                      PERFORM 046-GRAVAR-DEBCRE
+               END-IF   
+           END-IF 
+
            PERFORM 043-LER-COMPROD.
-
+           
        071-SALVAR-RELTOT.
            PERFORM 035-MOVER-DADOS-RELTOT.
            PERFORM 047-GRAVAR-RELTOT.
